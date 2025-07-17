@@ -1,5 +1,7 @@
 # Webpack 前端工程化详解
 
+官方文档：[ webpack中文网](https://www.webpackjs.com/)
+
 Webpack 的出现源于前端开发复杂度提升带来的核心痛点，其诞生的背景和解决的问题可概括为以下四点：
 
 ------
@@ -474,38 +476,210 @@ module.exports = {
 
 ### 6.2 资源模块（Asset Modules）
 
-```javascript
+Webpack 5 的 **Asset Modules（资源模块）** 彻底革新了静态资源（如图片、字体、音视频等）的处理方式，通过内置的四种资源类型替代了传统的 Loader（如 `file-loader`/`url-loader`），简化配置并提升开发效率。以下从核心概念、配置实践、性能优化到高级应用展开详解：
+
+------
+
+🧩 **一、Asset Modules 的四种核心类型与作用**
+
+| **类型**             | **功能**                                                     | **适用场景**                     | **替代方案**         |
+| -------------------- | ------------------------------------------------------------ | -------------------------------- | -------------------- |
+| **`asset/resource`** | 生成独立文件并导出 URL 路径（如 `dist/images/hash.png`）     | 大文件（图片、字体、音视频）     | `file-loader`        |
+| **`asset/inline`**   | 将资源转为 Base64 格式的 Data URI 内联到 JS/CSS 中           | 小图标（< 8KB）                  | `url-loader`         |
+| **`asset/source`**   | 将文件内容作为字符串导入 JS 代码                             | 文本文件（配置、模板、SVG 源码） | `raw-loader`         |
+| **`asset`**          | 根据文件大小自动选择 `inline`（小文件）或 `resource`（大文件）模式 | 动态优化（如图片按阈值处理）     | `url-loader + limit` |
+
+**关键特性**：
+
+- **无需额外 Loader**：Webpack 5 内置支持，减少依赖。
+- **智能决策**：`asset` 类型默认以 `8KB` 为阈值，可通过 `parser.dataUrlCondition.maxSize` 自定义。
+
+------
+
+⚙️ **二、配置实践与代码示例**
+
+1. **基础配置模板**
+
+```
+// webpack.config.js
 module.exports = {
-  // ...
   module: {
     rules: [
+      // 1. 输出独立文件（大图）
       {
-        test: /\.png/,
-        type: 'asset/resource' // 替代 file-loader
+        test: /\.(pngjpe?g)$/i,
+        type: 'asset/resource',
+        generator: { filename: 'images/[hash][ext][query]' } // 自定义路径
       },
+      // 2. 内联小图标（SVG）
       {
-        test: /\.svg/,
-        type: 'asset/inline' // 替代 url-loader
+        test: /\.svg$/,
+        type: 'asset/inline'
       },
+      // 3. 导入文本内容
       {
-        test: /\.txt/,
-        type: 'asset/source' // 替代 raw-loader
+        test: /\.txt$/,
+        type: 'asset/source'
       },
+      // 4. 自动选择模式（按大小优化）
       {
-        test: /\.jpg/,
-        type: 'asset', // 在 resource 和 inline 之间自动选择
-        parser: {
-          dataUrlCondition: {
-            maxSize: 4 * 1024 // 4kb
-          }
-        }
+        test: /\.(gifwebp)$/i,
+        type: 'asset',
+        parser: { dataUrlCondition: { maxSize: 100 * 1024 } } // 100KB 阈值
       }
     ]
   }
 };
 ```
 
+2. **路径自定义技巧**
+
+- 全局路径：通过 
+
+  ```
+  output.assetModuleFilename
+  ```
+
+   统一设置
+
+  ```
+  output: {
+    assetModuleFilename: 'assets/[hash][ext][query]'
+  }
+  ```
+
+- 局部覆盖：在
+
+  ```
+  generator.filename
+  ```
+
+   中为特定规则指定路径（优先级更高）
+
+  ```
+  {
+    test: /\.font\.ttf$/,
+    type: 'asset/resource',
+    generator: { filename: 'fonts/[name][ext]' }
+  }
+  ```
+
+------
+
+⚡ **三、性能优化策略**
+
+1. **大小阈值优化**
+
+- 小文件内联：减少 HTTP 请求（适用于图标、字体）
+
+  ```
+  parser: { dataUrlCondition: { maxSize: 10 * 1024 } } // 10KB 以下转 Base64
+  ```
+
+- **大文件独立输出**：避免 Bundle 体积膨胀（如 >100KB 的图片）。
+
+2. **哈希命名与缓存**
+
+- 使用 
+
+  ```
+  [contenthash]
+  ```
+
+   防止缓存失效：
+
+  ```
+  generator: { filename: 'images/[contenthash][ext]' }
+  ```
+
+3. **按资源类型分类存储**
+
+```
+// 图片 → dist/images, 字体 → dist/fonts
+{
+  test: /\.(pngjpeg)$/,
+  type: 'asset/resource',
+  generator: { filename: 'images/[hash][ext]' }
+},
+{
+  test: /\.(woff2ttf)$/,
+  type: 'asset/resource',
+  generator: { filename: 'fonts/[hash][ext]' }
+}
+```
+
+------
+
+🚀 **四、高级应用场景**
+
+1. **自定义 Data URI 编码**
+
+对 SVG 使用更高效的压缩算法（如 `mini-svg-data-uri`）：
+
+```
+{
+  test: /\.svg$/,
+  type: 'asset/inline',
+  generator: {
+    dataUrl: content => {
+      const miniData = require('mini-svg-data-uri');
+      return miniData(content.toString());
+    }
+  }
+}
+```
+
+2. **动态导入资源**
+
+通过 `import.meta.url` 加载资源（适用于现代浏览器环境）：
+
+```
+// 在 JS 中动态引用图片
+const logo = new URL('./logo.png', import.meta.url);
+imgElement.src = logo.href;
+```
+
+3. **与旧版 Loader 兼容**
+
+若需混用旧版 Loader（如 `url-loader`），需禁用 Asset Modules 的默认处理：
+
+```
+{
+  test: /\.(pngjpg)$/i,
+  use: [{ loader: 'url-loader', options: { limit: 8192 } }],
+  type: 'javascript/auto' // 禁用 Asset Modules
+}
+```
+
+------
+
+💎 **总结：核心选择策略**
+
+| **资源类型**         | **使用场景**               | **性能影响**           |
+| -------------------- | -------------------------- | ---------------------- |
+| **`asset/resource`** | 大图、字体、音视频         | 减少 Bundle 体积       |
+| **`asset/inline`**   | < 10KB 的图标、矢量图      | 减少 HTTP 请求         |
+| **`asset/source`**   | 需直接操作的文本/SVG 源码  | 无额外请求，直接可用   |
+| **`asset`**          | 通用图片（自动按大小优化） | 平衡请求次数与加载速度 |
+
+> **最佳实践**：
+>
+> 1. **统一管理阈值**：对同类资源（如图片）使用 `asset` + `maxSize` 实现自动化优化。
+> 2. **路径规范化**：通过 `generator.filename` 分类存储资源，提升可维护性。
+> 3. **优先内置方案**：避免不必要的 Loader，减少配置复杂度。
+
 ### 6.3 模块联邦（Module Federation）
+
+模块联邦（Module Federation）是 Webpack 5 引入的革命性特性，它允许多个独立的构建结果组合成一个应用程序，各个构建可以单独开发、部署，同时又可以相互引用彼此的模块，实现了真正的微前端架构。
+
+#### 6.3.1 核心概念
+
+- **Host（主机）**：消费其他远程模块的 Webpack 构建
+- **Remote（远程）**：暴露模块给其他应用的 Webpack 构建
+- **Shared（共享）**：在应用间共享的依赖，避免重复加载
+- **Bidirectional Hosts（双向主机）**：一个应用可以同时是主机和远程，实现模块的双向共享
+
+#### 6.3.2 基本配置
 
 ```javascript
 // 主应用 webpack.config.js
@@ -515,12 +689,21 @@ module.exports = {
   // ...
   plugins: [
     new ModuleFederationPlugin({
-      name: 'host',
-      remotes: {
+      name: 'host',               // 当前应用名称
+      remotes: {                  // 引入的远程模块
         app1: 'app1@http://localhost:3001/remoteEntry.js',
         app2: 'app2@http://localhost:3002/remoteEntry.js'
       },
-      shared: ['react', 'react-dom']
+      shared: {                   // 共享依赖配置
+        react: { 
+          singleton: true,        // 确保只加载一个版本
+          requiredVersion: '^17.0.0' // 指定版本要求
+        },
+        'react-dom': {
+          singleton: true,
+          requiredVersion: '^17.0.0'
+        }
+      }
     })
   ]
 };
@@ -532,68 +715,646 @@ module.exports = {
   // ...
   plugins: [
     new ModuleFederationPlugin({
-      name: 'app1',
-      filename: 'remoteEntry.js',
-      exposes: {
-        './Button': './src/Button'
+      name: 'app1',               // 当前应用名称
+      filename: 'remoteEntry.js', // 入口文件名
+      exposes: {                  // 暴露的模块
+        './Button': './src/components/Button',
+        './Header': './src/components/Header'
       },
-      shared: ['react', 'react-dom']
+      shared: {                   // 共享依赖配置
+        react: { 
+          singleton: true, 
+          requiredVersion: '^17.0.0' 
+        },
+        'react-dom': {
+          singleton: true,
+          requiredVersion: '^17.0.0'
+        }
+      }
     })
   ]
 };
 ```
 
-### 6.4 改进的 Tree Shaking
+#### 6.3.3 动态远程容器
 
-Webpack 5 改进了 Tree Shaking 机制，可以更好地检测未使用的导出和嵌套的 Tree Shaking。
+```javascript
+// 动态加载远程模块
+const loadComponent = async (scope, module) => {
+  // 初始化共享作用域
+  await __webpack_init_sharing__("default");
+  
+  // 获取远程容器
+  const container = window[scope];
+  await container.init(__webpack_share_scopes__.default);
+  
+  // 获取工厂函数并请求模块
+  const factory = await container.get(module);
+  return factory();
+};
+
+// 使用示例
+const RemoteButton = React.lazy(() => loadComponent('app1', './Button'));
+```
+
+#### 6.3.4 高级用法
+
+1. **版本控制与冲突解决**
+
+```javascript
+shared: {
+  react: { 
+    singleton: true,          // 强制使用单例模式
+    strictVersion: false,     // 不要求严格版本匹配
+    requiredVersion: '^17.0.0',
+    eager: true               // 预先加载而非按需加载
+  }
+}
+```
+
+2. **回退机制**
+
+```javascript
+module.exports = {
+  // ...
+  plugins: [
+    new ModuleFederationPlugin({
+      // ...
+      remotes: {
+        app1: ['promise new Promise(resolve => {
+          // 自定义加载逻辑，支持错误处理和重试
+          const remoteUrl = "http://localhost:3001/remoteEntry.js";
+          const script = document.createElement("script");
+          script.src = remoteUrl;
+          script.onload = () => {
+            // 远程加载成功
+            const proxy = {
+              get: (request) => window.app1.get(request),
+              init: (arg) => window.app1.init(arg)
+            }
+            resolve(proxy);
+          }
+          script.onerror = () => {
+            // 加载失败时的处理
+            console.log("Remote load failed, falling back to local version");
+            // 可以加载本地备份版本
+            resolve(localFallback);
+          }
+          document.head.appendChild(script);
+        })']
+      }
+    })
+  ]
+};
+```
+
+#### 6.3.5 微前端架构实践
+
+1. **应用入口设计**
+
+```javascript
+// 主应用 bootstrap.js
+import('./app');
+
+// 主应用 app.js
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+
+// 远程组件
+const RemoteHeader = React.lazy(() => import('app1/Header'));
+const RemoteFooter = React.lazy(() => import('app2/Footer'));
+const RemoteProductPage = React.lazy(() => import('app3/ProductPage'));
+
+const App = () => (
+  <BrowserRouter>
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <RemoteHeader />
+      <Switch>
+        <Route path="/products" component={RemoteProductPage} />
+        {/* 其他路由 */}
+      </Switch>
+      <RemoteFooter />
+    </React.Suspense>
+  </BrowserRouter>
+);
+
+ReactDOM.render(<App />, document.getElementById('root'));
+```
+
+2. **共享状态管理**
+
+```javascript
+// 在shared模块中暴露状态管理库
+const ModuleFederationPlugin = require('webpack/lib/container/ModuleFederationPlugin');
+
+module.exports = {
+  // ...
+  plugins: [
+    new ModuleFederationPlugin({
+      name: 'shared_state',
+      filename: 'remoteEntry.js',
+      exposes: {
+        './store': './src/store',
+        './actions': './src/actions'
+      }
+    })
+  ]
+};
+
+// 在各应用中使用共享状态
+import { createStore } from 'redux';
+import rootReducer from 'shared_state/store';
+import { addToCart } from 'shared_state/actions';
+
+const store = createStore(rootReducer);
+store.dispatch(addToCart(product));
+```
+
+#### 6.3.6 模块联邦的优势与挑战
+
+**优势：**
+- 实现真正的微前端架构，支持独立开发、部署和扩展
+- 运行时共享代码，减少重复加载，优化性能
+- 支持跨框架组件共享（如React组件在Vue应用中使用）
+- 简化大型前端应用的开发和维护
+
+**挑战：**
+- 版本管理复杂性增加
+- 需要考虑远程模块加载失败的容错处理
+- 调试复杂度提高
+- 需要合理设计模块边界和共享范围
+```
+
+### 6.4 Top Level Await 支持
+
+Webpack 5 支持在模块顶层使用 `await` 关键字，无需包装在 `async` 函数中。这使得异步代码的组织更加简洁和直观。
+
+```javascript
+// 在模块顶层直接使用await (Webpack 5支持)
+// math.js
+const result = await fetch('https://api.example.com/math');
+export const pi = await result.json().then(data => data.pi);
+
+// 使用该模块
+import { pi } from './math.js';
+console.log(pi); // 可以直接使用，Webpack会处理好依赖顺序
+```
+
+配置示例：
+
+```javascript
+module.exports = {
+  // ...
+  experiments: {
+    topLevelAwait: true // 启用顶层await支持
+  }
+};
+```
+
+### 6.5 改进的 Tree Shaking
+
+Webpack 5 显著改进了 Tree Shaking 能力，可以更精确地检测未使用的代码并将其移除，包括对嵌套模块的支持、内部模块 Tree Shaking 和 CommonJS 的支持。
 
 ```javascript
 module.exports = {
   // ...
   optimization: {
-    usedExports: true,
-    innerGraph: true, // 新增内部模块分析
-    sideEffects: true
+    usedExports: true,   // 标记未使用的导出
+    sideEffects: true,    // 使用package.json的sideEffects标记
+    innerGraph: true,     // 内部模块分析，更精确地检测副作用
+    mangleExports: true   // 缩短导出名称
   }
 };
+```
+
+#### 6.5.1 Package.json 中的 sideEffects 优化
+
+```json
+{
+  "name": "my-package",
+  "sideEffects": [
+    "*.css",                // CSS文件有副作用，不应被移除
+    "./src/polyfills.js"    // 特定的polyfill文件有副作用
+  ]
+}
+```
+
+#### 6.5.2 更精确的导出分析
+
+Webpack 5 可以分析模块内部的依赖关系，即使在同一文件中，也能确定哪些导出是未使用的：
+
+```javascript
+// 源代码
+export function used() {
+  return 'used function';
+}
+
+export function unused() {
+  return 'this will be removed';
+}
+
+// 打包后 (简化表示)
+export function used() {
+  return 'used function';
+}
+// unused函数被完全移除
+```
+
+### 6.6 Node.js Polyfills 自动引入的移除
+
+Webpack 5 不再自动引入 Node.js polyfills，这使得打包结果更加精简，但也需要开发者显式处理 Node.js 模块的兼容性问题。
+
+#### 6.6.1 影响的模块
+
+以下 Node.js 核心模块在 Webpack 4 中会自动提供 polyfill，但在 Webpack 5 中不再自动提供：
+
+```
+crypto, buffer, path, process, stream, util, assert, constants, 等
+```
+
+#### 6.6.2 解决方案
+
+1. **使用兼容的库**：使用专为浏览器环境设计的库替代 Node.js 模块
+
+2. **手动添加 polyfill**：
+
+```javascript
+// webpack.config.js
+module.exports = {
+  // ...
+  resolve: {
+    fallback: {
+      crypto: require.resolve('crypto-browserify'),
+      stream: require.resolve('stream-browserify'),
+      buffer: require.resolve('buffer/'),
+      path: require.resolve('path-browserify'),
+      // 其他需要的polyfill
+    }
+  },
+  plugins: [
+    // 为全局变量提供polyfill
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
+      process: 'process/browser'
+    })
+  ]
+};
+```
+
+3. **排除不需要的 polyfill**：
+
+```javascript
+module.exports = {
+  // ...
+  resolve: {
+    fallback: {
+      crypto: false,  // 明确告诉webpack不需要为crypto提供polyfill
+      fs: false,
+      path: false
+    }
+  }
+};
+```
+
+### 6.7 持久化缓存的高级配置
+
+Webpack 5 的持久化缓存功能可以显著提高构建速度，以下是更详细的配置和最佳实践：
+
+#### 6.7.1 缓存类型和存储位置
+
+```javascript
+module.exports = {
+  // ...
+  cache: {
+    type: 'filesystem',           // 使用文件系统缓存
+    buildDependencies: {
+      config: [__filename]        // 当配置文件变化时使缓存失效
+    },
+    cacheDirectory: path.resolve(__dirname, '.temp_cache'), // 自定义缓存目录
+    name: 'my-build-cache',       // 缓存名称，用于多配置场景
+    version: '1.0',               // 缓存版本，更改会使缓存失效
+    compression: 'gzip',          // 缓存压缩方式: 'gzip' 或 false
+    store: 'pack',                // 存储方式: 'pack' 或 'idle'
+    idleTimeout: 60000,           // 缓存闲置超时（毫秒）
+    idleTimeoutForInitialStore: 0 // 初始缓存存储的闲置超时
+  }
+};
+```
+
+#### 6.7.2 缓存失效策略
+
+```javascript
+module.exports = {
+  // ...
+  cache: {
+    type: 'filesystem',
+    buildDependencies: {
+      // 这些值发生变化时，缓存将失效
+      config: [__filename],                    // 构建配置
+      tsconfig: [path.resolve(__dirname, 'tsconfig.json')], // TypeScript配置
+      env: ['LOCALAPPDATA', 'NODE_ENV']       // 环境变量
+    },
+    managedPaths: [                           // 管理的路径（默认为node_modules）
+      path.resolve(__dirname, 'node_modules')
+    ],
+    profile: true,                            // 启用缓存分析
+  }
+};
+```
+
+#### 6.7.3 缓存分析与调试
+
+```bash
+# 启用缓存分析并构建
+npx webpack --cache-type=filesystem --cache-debug
+
+# 清除缓存并重新构建
+npx webpack --cache-type=filesystem --no-cache
+```
+
+### 6.8 其他重要新特性
+
+#### 6.8.1 模块命名空间对象（Module Namespace Objects）
+
+```javascript
+// 支持命名空间导出
+// utils.js
+export const math = {
+  add: (a, b) => a + b,
+  subtract: (a, b) => a - b
+};
+
+// 使用
+import * as utils from './utils';
+console.log(utils.math.add(1, 2)); // 3
+```
+
+#### 6.8.2 改进的代码生成
+
+Webpack 5 生成更小、更高效的代码：
+
+```javascript
+// Webpack 4 生成的代码（简化）
+(function(modules) {
+  // 大量的运行时代码...
+  // 模块加载逻辑...
+})([/* 模块数组 */]);
+
+// Webpack 5 生成的代码（简化）
+(() => { // 更简洁的箭头函数
+  "use strict";
+  // 更少的运行时代码
+  // 更高效的模块加载
+})();
+```
+
+#### 6.8.3 WebAssembly 支持改进
+
+```javascript
+// webpack.config.js
+module.exports = {
+  // ...
+  experiments: {
+    asyncWebAssembly: true,  // 支持异步导入WebAssembly模块
+    syncWebAssembly: true,   // 支持同步导入WebAssembly模块
+    topLevelAwait: true      // 支持顶层await（通常与WebAssembly一起使用）
+  },
+  module: {
+    rules: [
+      {
+        test: /\.wasm$/,
+        type: 'webassembly/async' // 或 'webassembly/sync'
+      }
+    ]
+  }
+};
+
+// 使用WebAssembly模块
+import * as wasm from './module.wasm';
+console.log(wasm.add(1, 2)); // 3
 ```
 
 ## 7. Webpack 与其他构建工具的比较
 
 ### 7.1 Webpack vs Vite
 
+#### 7.1.1 核心差异
+
 | 特性 | Webpack | Vite |
-|-----|---------|------|
-| 构建原理 | 基于打包，所有模块打包后再提供服务 | 基于 ESM，开发环境无需打包 |
-| 开发服务器启动速度 | 较慢，需要先打包 | 极快，无需打包 |
-| 热更新速度 | 一般，需要重新构建 bundle | 极快，只更新变化的模块 |
+|------|---------|------|
+| 开发服务器启动 | 需要先打包整个应用 | 基于ESM按需编译，启动极快 |
+| 热更新速度 | 需要重新构建受影响的模块 | 精确更新修改的模块，速度快 |
+| 生产构建 | 自身构建引擎 | 使用Rollup构建 |
+| 配置复杂度 | 高度可配置，较复杂 | 简单，预设优化 |
 | 生态系统 | 非常成熟，插件丰富 | 相对较新，但发展迅速 |
-| 配置复杂度 | 较高，配置项多 | 较低，开箱即用 |
-| 生产构建 | 成熟稳定 | 基于 Rollup，性能良好 |
-| 兼容性 | 支持各种模块系统和旧浏览器 | 主要支持现代浏览器和 ESM |
+| 浏览器兼容性 | 良好，支持旧浏览器 | 开发环境需要支持ESM的现代浏览器 |
+
+#### 7.1.2 适用场景
+
+**Webpack适合：**
+- 大型复杂的企业级应用
+- 需要支持旧版浏览器的项目
+- 需要高度定制构建流程的项目
+- 有大量非ESM模块的项目
+
+**Vite适合：**
+- 中小型项目或原型开发
+- 对开发体验和速度有较高要求的团队
+- 主要使用ESM模块的现代项目
+- Vue或React等现代框架项目
+
+#### 7.1.3 性能对比
+
+```bash
+# 开发服务器启动时间对比（大型项目）
+Webpack: ~10-30秒
+Vite: ~300ms
+
+# 热更新时间
+Webpack: ~300ms-1s
+Vite: ~50-100ms
+```
+
+#### 7.1.4 配置对比
+
+```javascript
+// Webpack配置示例
+// webpack.config.js
+module.exports = {
+  entry: './src/index.js',
+  output: { /* ... */ },
+  module: {
+    rules: [
+      { test: /\.js$/, use: 'babel-loader' },
+      { test: /\.css$/, use: ['style-loader', 'css-loader'] },
+      // 更多loader配置...
+    ]
+  },
+  plugins: [ /* ... */ ],
+  optimization: { /* ... */ }
+};
+
+// Vite配置示例
+// vite.config.js
+export default {
+  plugins: [ /* ... */ ],
+  css: { /* ... */ },
+  build: { /* ... */ }
+};
+```
 
 ### 7.2 Webpack vs Rollup
 
+#### 7.2.1 核心差异
+
 | 特性 | Webpack | Rollup |
-|-----|---------|-------|
-| 适用场景 | 应用打包 | 库打包 |
-| 代码分割 | 强大的代码分割能力 | 支持但不如 Webpack 灵活 |
-| Tree Shaking | 支持但需要配置 | 原生支持，效果更好 |
-| 插件生态 | 丰富 | 相对较少 |
-| 配置复杂度 | 较高 | 较低 |
-| 打包速度 | 一般 | 较快 |
-| 非 JS 资源处理 | 强大 | 需要插件支持 |
+|------|---------|--------|
+| 主要用途 | 应用打包 | 库打包 |
+| 代码分割 | 强大，支持动态导入 | 有限支持 |
+| Tree Shaking | 支持，但不如Rollup彻底 | 非常优秀，生成更干净的代码 |
+| 输出格式 | 主要为浏览器优化 | 支持多种格式(ESM, CJS, UMD等) |
+| 插件系统 | 复杂但功能强大 | 简单直观 |
+| 配置复杂度 | 较高 | 相对简单 |
+
+#### 7.2.2 适用场景
+
+**Webpack适合：**
+- 复杂的Web应用程序
+- 需要代码分割和动态导入的项目
+- 需要处理多种资源类型的项目
+
+**Rollup适合：**
+- JavaScript库和工具
+- 需要生成多种模块格式的项目
+- 对bundle大小和性能有严格要求的项目
+
+#### 7.2.3 配置对比
+
+```javascript
+// Webpack配置
+module.exports = {
+  entry: './src/index.js',
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist')
+  },
+  // 更多配置...
+};
+
+// Rollup配置
+export default {
+  input: 'src/index.js',
+  output: {
+    file: 'dist/bundle.js',
+    format: 'esm' // 或 'cjs', 'umd' 等
+  },
+  plugins: [ /* ... */ ]
+};
+```
 
 ### 7.3 Webpack vs Parcel
 
+#### 7.3.1 核心差异
+
 | 特性 | Webpack | Parcel |
-|-----|---------|-------|
-| 配置 | 需要详细配置 | 零配置 |
-| 性能 | 需要优化 | 开箱即用的性能优化 |
-| 开发体验 | 需要配置 HMR | 自动启用 HMR |
-| 扩展性 | 高度可定制 | 相对有限 |
+|------|---------|--------|
+| 配置 | 需要详细配置 | 零配置，开箱即用 |
+| 构建速度 | 较慢，需要优化 | 快速，多核并行处理 |
+| 开发体验 | 需要配置开发服务器 | 内置开发服务器和HMR |
+| 可定制性 | 高度可定制 | 有限，但足够大多数场景 |
 | 学习曲线 | 陡峭 | 平缓 |
-| 适用场景 | 复杂应用 | 简单应用、原型开发 |
+
+#### 7.3.2 适用场景
+
+**Webpack适合：**
+- 需要精细控制构建过程的项目
+- 有特定优化需求的大型应用
+- 团队已熟悉Webpack生态
+
+**Parcel适合：**
+- 快速原型开发
+- 小到中型项目
+- 希望减少配置的团队
+- 学习前端工程化的新手
+
+#### 7.3.3 使用对比
+
+```bash
+# Webpack项目初始化
+npm init -y
+npm install webpack webpack-cli webpack-dev-server --save-dev
+# 需要创建webpack.config.js并配置
+
+# Parcel项目初始化
+npm init -y
+npm install parcel-bundler --save-dev
+# 直接运行，无需配置
+npx parcel index.html
+```
+
+### 7.4 Webpack vs Esbuild
+
+#### 7.4.1 核心差异
+
+| 特性 | Webpack | Esbuild |
+|------|---------|--------|
+| 构建速度 | JavaScript实现，相对较慢 | Go语言实现，极快 |
+| 功能完整性 | 功能全面 | 功能相对有限 |
+| 生态系统 | 成熟丰富 | 新兴，生态发展中 |
+| 配置复杂度 | 复杂 | 简单 |
+| 代码转换 | 基于Babel等工具 | 内置转换功能 |
+
+#### 7.4.2 性能对比
+
+```bash
+# 构建时间对比（中型项目）
+Webpack: ~10-20秒
+Esbuild: ~200-500ms (快10-100倍)
+```
+
+#### 7.4.3 使用场景
+
+**Webpack适合：**
+- 需要完整功能集的复杂应用
+- 需要丰富插件生态的项目
+
+**Esbuild适合：**
+- 对构建速度有极高要求的项目
+- 作为其他构建工具的基础（如Vite使用Esbuild预构建）
+- 简单的构建需求
+
+### 7.5 选择合适的构建工具
+
+#### 7.5.1 决策因素
+
+1. **项目类型和规模**
+   - 大型应用：Webpack
+   - 库/工具：Rollup
+   - 小型项目/原型：Vite或Parcel
+
+2. **团队熟悉度**
+   - 已有Webpack经验：继续使用Webpack
+   - 新团队/项目：考虑Vite等更现代的工具
+
+3. **构建性能需求**
+   - 极致开发体验：Vite或Esbuild
+   - 复杂优化需求：Webpack
+
+4. **浏览器兼容性**
+   - 需支持旧浏览器：Webpack
+   - 只支持现代浏览器：可考虑其他选项
+
+#### 7.5.2 混合使用策略
+
+在实际项目中，可以混合使用不同的构建工具：
+
+```javascript
+// 在库项目中使用Rollup构建
+// 在应用项目中使用Webpack
+// 在开发环境使用Vite，生产环境使用Webpack
+// 使用Esbuild处理TypeScript，使用Webpack进行最终打包
+```
 
 ## 8. 实际项目中的 Webpack 最佳实践
 
@@ -736,3 +1497,4 @@ Webpack 作为前端工程化的核心工具之一，通过模块打包、资源
 随着 Webpack 5 的发布，持久化缓存、资源模块、模块联邦等新特性进一步增强了 Webpack 的能力。同时，Vite 等新兴构建工具也在不断发展，为前端工程化提供了更多选择。
 
 在实际项目中，应根据项目规模、团队熟悉度、性能需求等因素，选择合适的构建工具和配置策略，以达到最佳的开发体验和应用性能。
+
