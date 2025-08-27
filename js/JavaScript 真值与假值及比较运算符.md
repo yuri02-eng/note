@@ -41,7 +41,7 @@ JavaScript 中的逻辑运算符返回操作数的实际值，而不是布尔值
 
 示例：
 
-```
+```javascript
 console.log(0 && 2);    // 输出 0
 console.log(1 && 2);    // 输出 2
 console.log(1 && 0);    // 输出 0
@@ -55,7 +55,7 @@ console.log(null && 2); // 输出 null
 
 示例：
 
-```
+```javascript
 console.log(0 || 2);    // 输出 2
 console.log(1 || 2);    // 输出 1
 console.log(null || 2); // 输出 2
@@ -80,7 +80,7 @@ JavaScript 提供了两种相等比较运算符，它们的行为有重要区别
 
 ### 比较示例
 
-```
+```javascript
 // 数字与字符串
 5 == "5";   // true (字符串转换为数字)
 5 === "5";  // false (类型不同)
@@ -128,7 +128,7 @@ obj === obj;  // true (相同对象引用)
 
 ### 默认值设置
 
-```
+```javascript
 // 如果 username 为假值，使用默认值
 const name = username || "匿名用户";
 
@@ -138,7 +138,7 @@ const settings = options || {};
 
 ### 条件执行
 
-```
+```javascript
 // 只有当 user 存在时才调用函数
 user && user.isAdmin && showAdminPanel();
 
@@ -148,7 +148,7 @@ callback && callback();
 
 ### 安全访问属性
 
-```
+```javascript
 // 避免访问 undefined 或 null 的属性
 const name = user && user.profile && user.profile.name;
 // ES2020 可选链操作符更好：user?.profile?.name
