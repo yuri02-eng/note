@@ -1,139 +1,433 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素宽度属性详解表</title>
     <style>
-        /* 导航栏容器 */
-        .navbar {
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #333;
-            color: white;
-            padding: 16px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* 品牌标识 */
-        .brand {
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
 
-            font-size: 24px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .description {
+            background: #eef7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            font-size: 15px;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f9ff;
+        }
+
+        .checkmark {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .cross {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .demo-container {
+            display: flex;
+            gap: 30px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .demo-box {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .demo-box h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .element {
+            width: 250px;
+            height: 100px;
+            padding: 20px;
+            margin: 20px auto;
+            border: 5px solid #e74c3c;
+            background-color: #3498db;
+            color: white;
+            overflow: auto;
+            position: relative;
+        }
+
+        .element-content {
+            width: 400px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
         }
 
-        /* 导航链接 */
-        .nav-links {
-
-            display: flex;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .nav-links li {
-
-            margin-left: 20px;
-        }
-
-        .nav-links a {
-
+        .values-display {
+            background: #2c3e50;
             color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
         }
 
-        .nav-links a:hover {
-
-            color: #007BFF;
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
         }
 
-        /* 移动端菜单按钮 */
-        .menu-toggle {
-
-            display: none;
-            cursor: pointer;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .menu-toggle .bar {
-
-            width: 25px;
-            height: 3px;
-            background-color: white;
-            margin: 5px 0;
-            transition: all 0.3s ease;
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
         }
 
-        /* 响应式设计 */
+        .content-color {
+            background-color: #3498db;
+        }
+
+        .padding-color {
+            background-color: #2ecc71;
+        }
+
+        .border-color {
+            background-color: #e74c3c;
+        }
+
+        .scrollbar-color {
+            background-color: #9b59b6;
+        }
+
+        .overflow-color {
+            background-color: #f39c12;
+        }
+
+        .diagram {
+            width: 100%;
+            height: 200px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diagram-label {
+            position: absolute;
+            font-size: 12px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+
+        .property-explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .property-explanation h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .note {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
         @media (max-width: 768px) {
-
-            .nav-links {
-
-                display: none;
+            .demo-container {
                 flex-direction: column;
-                position: absolute;
-                top: 60px;
-                left: 0;
-                background-color: #333;
-                width: 100%;
             }
 
-            .nav-links.active {
-
-                display: flex;
+            table {
+                font-size: 14px;
             }
 
-            .nav-links li {
-
-                margin: 10px 0;
-                text-align: center;
-            }
-
-            .menu-toggle {
-
-                display: block;
+            th, td {
+                padding: 12px 8px;
             }
         }
     </style>
 </head>
 <body>
-<nav class="navbar">
-    <div class="brand">Logo</div>
-    <ul class="nav-links">
-        <li><a href="#">首页</a></li>
-        <li><a href="#">产品</a></li>
-        <li><a href="#">服务</a></li>
-        <li><a href="#">关于我们</a></li>
-        <li><a href="#">联系我们</a></li>
-    </ul>
-    <div class="menu-toggle">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
+<div class="container">
+    <h1>元素宽度属性详解表</h1>
+
+    <div class="description">
+        <p>本表格详细对比了JavaScript中常用的元素宽度属性：<code>style.width</code>、<code>offsetWidth</code>、<code>clientWidth</code>和<code>scrollWidth</code>。每个属性在测量元素宽度时有不同的计算规则和应用场景。</p>
     </div>
-</nav>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box content-color"></div>
+            <span>内容区域</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box padding-color"></div>
+            <span>内边距</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box border-color"></div>
+            <span>边框</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box scrollbar-color"></div>
+            <span>滚动条</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box overflow-color"></div>
+            <span>溢出内容</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>属性</th>
+            <th>包含边框</th>
+            <th>包含内边距</th>
+            <th>包含滚动条</th>
+            <th>包含溢出内容</th>
+            <th>返回值类型</th>
+            <th>可写性</th>
+            <th>描述</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td><code>style.width</code></td>
+            <td class="cross">❌</td>
+            <td class="cross">❌</td>
+            <td class="cross">❌</td>
+            <td class="cross">❌</td>
+            <td>字符串</td>
+            <td class="checkmark">✅</td>
+            <td>获取或设置元素的内联样式宽度（如 style="width: 100px"）</td>
+        </tr>
+        <tr>
+            <td><code>offsetWidth</code></td>
+            <td class="checkmark">✅</td>
+            <td class="checkmark">✅</td>
+            <td class="checkmark">✅</td>
+            <td class="cross">❌</td>
+            <td>数字(像素)</td>
+            <td class="cross">❌</td>
+            <td>元素总布局宽度（内容 + 内边距 + 边框 + 垂直滚动条）</td>
+        </tr>
+        <tr>
+            <td><code>clientWidth</code></td>
+            <td class="cross">❌</td>
+            <td class="checkmark">✅</td>
+            <td class="cross">❌</td>
+            <td class="cross">❌</td>
+            <td>数字(像素)</td>
+            <td class="cross">❌</td>
+            <td>元素内部可视宽度（内容 + 内边距，不含边框和滚动条）</td>
+        </tr>
+        <tr>
+            <td><code>scrollWidth</code></td>
+            <td class="cross">❌</td>
+            <td class="checkmark">✅</td>
+            <td class="cross">❌</td>
+            <td class="checkmark">✅</td>
+            <td>数字(像素)</td>
+            <td class="cross">❌</td>
+            <td>元素内容总宽度（包括因溢出而隐藏的内容）</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="diagram">
+        <!-- 可视化表示 -->
+        <div style="position: absolute; top: 20px; left: 20px; width: 300px; height: 160px; border: 3px solid #e74c3c; background-color: #2ecc71;">
+            <!-- 边框 -->
+            <div class="diagram-label" style="top: -20px; left: 10px;">offsetWidth</div>
+
+            <!-- 内边距 -->
+            <div style="position: absolute; top: 10px; left: 10px; width: 280px; height: 140px; background-color: #3498db;">
+                <!-- 内容区域 -->
+                <div class="diagram-label" style="top: 10px; left: 10px;">clientWidth</div>
+
+                <!-- 滚动条 -->
+                <div style="position: absolute; top: 0; right: 0; width: 15px; height: 140px; background-color: #9b59b6;"></div>
+
+                <!-- 溢出内容 -->
+                <div style="position: absolute; top: 50px; left: 280px; width: 120px; height: 40px; background-color: #f39c12;">
+                    <div class="diagram-label" style="top: -20px; left: 10px;">scrollWidth</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-container">
+        <div class="demo-box">
+            <h3>元素示例</h3>
+            <div class="element">
+                <div class="element-content">
+                    内容宽度: 400px (溢出)
+                </div>
+            </div>
+            <div class="values-display">
+                style.width: <span id="styleWidth">250px</span><br>
+                offsetWidth: <span id="offsetWidth">275</span>px<br>
+                clientWidth: <span id="clientWidth">210</span>px<br>
+                scrollWidth: <span id="scrollWidth">430</span>px
+            </div>
+        </div>
+
+        <div class="demo-box">
+            <h3>属性计算公式</h3>
+            <div class="property-explanation">
+                <p><strong>offsetWidth</strong> = width + padding-left + padding-right + border-left + border-right + vertical scrollbar</p>
+                <p><strong>clientWidth</strong> = width + padding-left + padding-right - vertical scrollbar</p>
+                <p><strong>scrollWidth</strong> = 实际内容宽度 + padding-left + padding-right</p>
+            </div>
+
+            <div class="note">
+                <strong>注意：</strong>当内容没有溢出时，scrollWidth 等于 clientWidth。
+                滚动条是否占用空间取决于操作系统和浏览器设置。
+            </div>
+        </div>
+    </div>
+
+    <div class="property-explanation">
+        <h3>使用场景示例</h3>
+
+        <div class="code-block">
+            // 检测元素是否出现水平滚动条
+            function hasHorizontalScroll(element) {
+            return element.scrollWidth > element.clientWidth;
+            }
+
+            // 获取元素内容宽度（排除内边距）
+            function getContentWidth(el) {
+            const style = getComputedStyle(el);
+            return el.clientWidth -
+            parseFloat(style.paddingLeft) -
+            parseFloat(style.paddingRight);
+            }
+
+            // 动态设置元素宽度并保持比例
+            function setResponsiveWidth(element, percent) {
+            const parentWidth = element.parentElement.clientWidth;
+            element.style.width = `${parentWidth * percent / 100}px`;
+            }
+        </div>
+    </div>
+</div>
 
 <script>
-    // 移动端菜单切换
-    const menuToggle = document.querySelector('.menu-toggle');
-    const navLinks = document.querySelector('.nav-links');
+    document.addEventListener('DOMContentLoaded', function() {
+        const element = document.querySelector('.element');
 
-    menuToggle.addEventListener('click', () => {
+        // 获取属性值
+        const styleWidth = document.getElementById('styleWidth');
+        const offsetWidth = document.getElementById('offsetWidth');
+        const clientWidth = document.getElementById('clientWidth');
+        const scrollWidth = document.getElementById('scrollWidth');
 
-        navLinks.classList.toggle('active');
-        menuToggle.classList.toggle('active');
-
-        // 切换图标
-        const bars = menuToggle.querySelectorAll('.bar');
-        if (navLinks.classList.contains('active')) {
-
-            bars[0].style.transform = 'rotate(-45deg) translate(-5px, 6px)';
-            bars[1].style.opacity = '0';
-            bars[2].style.transform = 'rotate(45deg) translate(-5px, -6px)';
-        } else {
-
-            bars[0].style.transform = 'none';
-            bars[1].style.opacity = '1';
-            bars[2].style.transform = 'none';
-        }
+        // 设置显示的值
+        styleWidth.textContent = element.style.width;
+        offsetWidth.textContent = element.offsetWidth;
+        clientWidth.textContent = element.clientWidth;
+        scrollWidth.textContent = element.scrollWidth;
     });
 </script>
 </body>

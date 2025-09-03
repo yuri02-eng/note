@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        ul {
+            display: flex; /* 启用弹性布局 */
+            flex-direction: column;
+            gap: 0; /* 可选：明确设置间隙为0 */
+        }
+
+        li {
+            display: inline-block; /* 或直接使用flex项特性 */
+        }
+    </style>
+</head>
+<body>
+<ul>
+    <li>项目1</li>  <!-- 这里的换行符会被解析为空格 -->
+    <li>项目2</li>
+    <li>项目3</li>
+</ul>
+</body>
+</html>
