@@ -1,0 +1,39 @@
+{
+    // 通用格式化设置
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "always"
+    },
+    // 缩进设置
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": true,
+    "editor.autoIndent": "full",
+    // C++ 特定设置
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+    },
+    // Prettier 配置
+    "prettier.tabWidth": 4,
+    "prettier.useTabs": false,
+    "prettier.semi": true,
+    // C/C++ 扩展格式化配置
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.clang_format_fallbackStyle": "Google",
+    "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 0 }",
+    // 括号着色
+    "bracket-pair-colorizer-2.colors": [
+        "#ffd700",
+        "#da70d6",
+        "#87ceeb"
+    ],
+    "files.associations": {
+        "ctime": "cpp",
+        "iostream": "cpp",
+        "ostream": "cpp"
+    }
+}
